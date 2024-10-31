@@ -1,45 +1,45 @@
-import { create } from "./create";
-import './style.css';
+import { Button, Form, Input, Select } from "@websqnl/elements"
 
-const button = create("button", { textContent: 'Ouvir' });
 
-document.body.appendChild(button);
+const input = new Input()
+const submitForm = new Button({ textContent: 'falar' })
+const form = new Form()
+const select = new Select()
+const utter = new SpeechSynthesisUtterance()
 
-const WebSpeechRecognition =
-    window.SpeechRecognition ?? window.webkitSpeechRecognition;
+let textValue = ''
 
-const recognition = new WebSpeechRecognition();
+let voices: SpeechSynthesisVoice[] = []
+let voice: SpeechSynthesisVoice
 
-recognition.maxAlternatives = 1;
-recognition.lang = 'pt-BR';
-recognition.continuous = false;
-
-console.log(recognition);
-
-let voices = [];
-let voice;
 speechSynthesis.onvoiceschanged = () => {
-    voices = speechSynthesis.getVoices().filter((voice) => voice.lang === 'pt-BR');
-};
+    Array.from(select.children).forEach((child) => child.remove())
 
-voices = await speechSynthesis.getVoices();
-
-recognition.onresult = (ev) => {
-    const { transcript } = ev.results[0][0];
-
-
-    document.body.appendChild(create('p', { textContent: transcript }));
-    const utter = new SpeechSynthesisUtterance(transcript);
-    utter.lang = 'pt-BR';
-    const voices = speechSynthesis
+    voices = speechSynthesis
         .getVoices()
-        .filter((voice) => voice.lang === 'pt-BR');
-    console.log('voices: ', voices);
-    utter.voice = voices[0];
-    console.log('utter', utter);
-    window.speechSynthesis.speak(utter);
-};
+        .filter((voice) => voice.lang === 'pt-BR')
 
-button.onclick = () => {
-    recognition.start();
-};
+    voices.forEach((v, i) => {
+        select.add(new Option(v.name, `${i}`, v.default))
+        if (v.default) voice = v
+    })
+}
+
+select.onchange = () => {
+    voice = voices[+select.value]
+
+    utter.voice = voice
+    utter.lang = voice.lang  
+   
+}
+
+form.append(input, select,  submitForm)
+
+    document.body.append(form)
+
+    form.onsubmit = (event) => {
+        event.preventDefault()
+
+        utter.text = input.value
+        speechSynthesis.speak(utter)
+    }
