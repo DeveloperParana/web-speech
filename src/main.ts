@@ -1,27 +1,45 @@
 import { create } from "./create";
 import './style.css';
 
-const button = create("button", { textContent: 'Ouvir'});
+const button = create("button", { textContent: 'Ouvir' });
 
 document.body.appendChild(button);
 
 const WebSpeechRecognition =
-  window.SpeechRecognition ?? window.webkitSpeechRecognition;
+    window.SpeechRecognition ?? window.webkitSpeechRecognition;
 
 const recognition = new WebSpeechRecognition();
 
-recognition.maxAlternatives = 1
-recognition.lang = 'pt-BR'
-recognition.interimResults = true
-recognition.continuous = true
+recognition.maxAlternatives = 1;
+recognition.lang = 'pt-BR';
+recognition.continuous = false;
 
 console.log(recognition);
 
-recognition.onresult = (ev) => {
-  const { transcript } = ev.results[0][ev.resultIndex ?? 0];
-  
-
-  document.body.appendChild(create('p', { textContent: transcript }))
+let voices = [];
+let voice;
+speechSynthesis.onvoiceschanged = () => {
+    voices = speechSynthesis.getVoices().filter((voice) => voice.lang === 'pt-BR');
 };
 
-recognition.start();
+voices = await speechSynthesis.getVoices();
+
+recognition.onresult = (ev) => {
+    const { transcript } = ev.results[0][0];
+
+
+    document.body.appendChild(create('p', { textContent: transcript }));
+    const utter = new SpeechSynthesisUtterance(transcript);
+    utter.lang = 'pt-BR';
+    const voices = speechSynthesis
+        .getVoices()
+        .filter((voice) => voice.lang === 'pt-BR');
+    console.log('voices: ', voices);
+    utter.voice = voices[0];
+    console.log('utter', utter);
+    window.speechSynthesis.speak(utter);
+};
+
+button.onclick = () => {
+    recognition.start();
+};
